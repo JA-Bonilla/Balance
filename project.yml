@@ -1,0 +1,52 @@
+name: Balance
+options:
+  bundleIdPrefix: com.jabonilla
+  deploymentTarget:
+    iOS: "26.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Balance:
+    type: application
+    platform: iOS
+    sources: [Balance]
+    entitlements:
+      path: Balance/Balance.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+    info:
+      path: Balance/Info.plist
+      properties:
+        CFBundleDisplayName: Balance
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # Exposes Documents/balance.json in the Files app ("On My iPhone > Balance").
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        NSHealthShareUsageDescription: Balance reads your workouts and mindful minutes so they count toward your growth time automatically.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jabonilla.balance
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+  BalanceTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [BalanceTests]
+    dependencies:
+      - target: Balance
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Balance:
+    build:
+      targets:
+        Balance: all
+        BalanceTests: [test]
+    test:
+      targets: [BalanceTests]
