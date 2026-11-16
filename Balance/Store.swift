@@ -39,6 +39,7 @@ final class Store {
 
     func delete(_ entry: Entry) {
         data.entries.removeAll { $0.id == entry.id }
+        if entry.source == .health { data.hiddenHealthIDs.insert(entry.id) }
         save()
     }
 
@@ -55,7 +56,7 @@ final class Store {
     /// Replaces Health-sourced entries inside `interval` with a fresh import, so edits/deletions in Health carry over.
     func replaceHealthEntries(_ entries: [Entry], in interval: DateInterval) {
         data.entries.removeAll { $0.source == .health && interval.contains($0.date) }
-        data.entries += entries
+        data.entries += entries.filter { !data.hiddenHealthIDs.contains($0.id) }
         save()
     }
 }

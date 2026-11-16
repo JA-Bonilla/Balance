@@ -12,7 +12,7 @@ struct SettingsView: View {
                     let c = Category.with(id: goal.categoryID)
                     Button { editingGoal = goal } label: {
                         LabeledContent {
-                            Text("\(goal.weeklyMinutes) min / week")
+                            Text("\(goal.minutesPerDay) min × \(goal.daysPerWeek)d")
                         } label: {
                             Label(c?.name ?? goal.categoryID, systemImage: c?.symbol ?? "circle")
                         }
@@ -26,7 +26,7 @@ struct SettingsView: View {
                 }
                 Button("Add goal", systemImage: "plus") {
                     let used = Set(store.data.goals.map(\.categoryID))
-                    editingGoal = Goal(categoryID: Category.growth.first { !used.contains($0.id) }?.id ?? "reading", weeklyMinutes: 60)
+                    editingGoal = Goal(categoryID: Category.growth.first { !used.contains($0.id) }?.id ?? "reading", minutesPerDay: 15, daysPerWeek: 5)
                 }
             }
 
@@ -75,7 +75,7 @@ struct GoalSheet: View {
                 Picker("Area", selection: $goal.categoryID) {
                     ForEach(Category.growth) { Label($0.name, systemImage: $0.symbol).tag($0.id) }
                 }
-                Stepper("\(goal.weeklyMinutes) min / week", value: $goal.weeklyMinutes, in: 15...1200, step: 15)
+                TargetFields(perDay: $goal.minutesPerDay, days: $goal.daysPerWeek)
             }
             .navigationTitle("Goal")
             .navigationBarTitleDisplayMode(.inline)

@@ -58,6 +58,5 @@ struct LogSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
     }
 }

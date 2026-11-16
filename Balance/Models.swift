@@ -50,7 +50,28 @@ struct Category: Identifiable, Hashable {
 struct Goal: Codable, Identifiable, Hashable {
     var id = UUID()
     var categoryID: String
-    var weeklyMinutes: Int
+    var minutesPerDay: Int
+    var daysPerWeek: Int
+    var weeklyMinutes: Int { minutesPerDay * daysPerWeek }
+}
+
+extension Goal {
+    private enum LegacyKeys: String, CodingKey { case weeklyMinutes }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        categoryID = try c.decode(String.self, forKey: .categoryID)
+        if let perDay = try c.decodeIfPresent(Int.self, forKey: .minutesPerDay) {
+            minutesPerDay = perDay
+            daysPerWeek = try c.decode(Int.self, forKey: .daysPerWeek)
+        } else {
+            // v0.1 files stored only a weekly total; spread it over 5 days.
+            let weekly = try decoder.container(keyedBy: LegacyKeys.self).decode(Int.self, forKey: .weeklyMinutes)
+            daysPerWeek = 5
+            minutesPerDay = max(1, (weekly + 4) / 5)
+        }
+    }
 }
 
 struct Entry: Codable, Identifiable, Hashable {
@@ -66,6 +87,8 @@ struct AppData: Codable {
     var goals: [Goal] = []
     var entries: [Entry] = []
     var healthEnabled = false
+    /// Health samples the user deleted, so re-imports skip them.
+    var hiddenHealthIDs: Set<UUID> = []
 
     func minutes(_ side: Side, in interval: DateInterval) -> Int {
         entries.filter { $0.side == side && interval.contains($0.date) }.reduce(0) { $0 + $1.minutes }
@@ -75,10 +98,24 @@ struct AppData: Codable {
         entries.filter { $0.categoryID == category && interval.contains($0.date) }.reduce(0) { $0 + $1.minutes }
     }
 
-    /// -1 = all fun, 0 = even, +1 = all growth.
+    /// Growth minutes per fun minute that counts as balanced. Typical adults run ~5–10 fun : 1 growth.
+    static let growthPerFun = 0.2
+
+    /// -1 = all fun, 0 = balanced (growth ≈ 20% of fun), +1 = all growth.
     static func balance(growth: Int, fun: Int) -> Double {
-        let total = growth + fun
-        return total == 0 ? 0 : Double(growth - fun) / Double(total)
+        let g = Double(growth), target = growthPerFun * Double(fun)
+        return g + target == 0 ? 0 : (g - target) / (g + target)
+    }
+}
+
+extension AppData {
+    /// Missing keys fall back to defaults, so files from older versions still load.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        goals = try c.decodeIfPresent([Goal].self, forKey: .goals) ?? []
+        entries = try c.decodeIfPresent([Entry].self, forKey: .entries) ?? []
+        healthEnabled = try c.decodeIfPresent(Bool.self, forKey: .healthEnabled) ?? false
+        hiddenHealthIDs = try c.decodeIfPresent(Set<UUID>.self, forKey: .hiddenHealthIDs) ?? []
     }
 }
 

@@ -3,7 +3,8 @@ import SwiftUI
 struct OnboardingView: View {
     @Environment(Store.self) private var store
     @State private var picked: Category?
-    @State private var minutes = 60
+    @State private var perDay = 15
+    @State private var days = 5
 
     var body: some View {
         NavigationStack {
@@ -20,7 +21,7 @@ struct OnboardingView: View {
             .navigationDestination(item: $picked) { category in
                 Form {
                     Section {
-                        Stepper("\(minutes) min / week", value: $minutes, in: 15...1200, step: 15)
+                        TargetFields(perDay: $perDay, days: $days)
                     } header: {
                         Label(category.name, systemImage: category.symbol)
                     } footer: {
@@ -31,13 +32,25 @@ struct OnboardingView: View {
                             .foregroundStyle(.secondary)
                     }
                     Button("Start") {
-                        store.upsert(Goal(categoryID: category.id, weeklyMinutes: minutes))
+                        store.upsert(Goal(categoryID: category.id, minutesPerDay: perDay, daysPerWeek: days))
                     }
                     .bold()
                 }
                 .navigationTitle("Weekly target")
             }
         }
+    }
+}
+
+/// Minutes per day × days per week; the weekly target is derived.
+struct TargetFields: View {
+    @Binding var perDay: Int
+    @Binding var days: Int
+
+    var body: some View {
+        Stepper("\(perDay) min a day", value: $perDay, in: 5...240, step: 5)
+        Stepper("\(days) day\(days == 1 ? "" : "s") a week", value: $days, in: 1...7)
+        LabeledContent("Weekly target", value: "\(perDay * days) min")
     }
 }
 

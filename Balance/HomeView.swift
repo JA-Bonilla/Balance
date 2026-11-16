@@ -42,10 +42,9 @@ struct HomeView: View {
                         EntryRow(entry: entry)
                             .contentShape(.rect)
                             .onTapGesture { if entry.source == .manual { editing = entry } }
-                            .swipeActions {
-                                if entry.source == .manual {
-                                    Button("Delete", role: .destructive) { store.delete(entry) }
-                                }
+                            .swipeActions(edge: .trailing) {
+                                Button("Delete", systemImage: "trash", role: .destructive) { store.delete(entry) }
+                                    .tint(.red) // the app-wide accent tint would otherwise recolor it
                             }
                     }
                 }

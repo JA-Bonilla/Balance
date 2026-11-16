@@ -8,12 +8,17 @@ struct BalanceView: View {
 
     private var balance: Double { AppData.balance(growth: growth, fun: fun) }
 
-    private enum Lean { case empty, balanced, growth, fun }
+    private enum Lean { case empty, balanced, growth, fun, growthHeavy, funHeavy }
 
     private var lean: Lean {
         if growth + fun == 0 { return .empty }
-        if abs(balance) <= 0.2 { return .balanced }
-        return balance > 0 ? .growth : .fun
+        switch balance {
+        case ..<(-0.5): return .funHeavy
+        case ..<(-0.15): return .fun
+        case ...0.15: return .balanced
+        case ...0.5: return .growth
+        default: return .growthHeavy
+        }
     }
 
     private var caption: String {
@@ -22,6 +27,8 @@ struct BalanceView: View {
         case .balanced: "Balanced"
         case .growth: "Leaning toward growth"
         case .fun: "Leaning toward fun"
+        case .growthHeavy: "Growth-heavy"
+        case .funHeavy: "Fun-heavy"
         }
     }
 
