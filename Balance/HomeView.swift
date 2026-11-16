@@ -33,7 +33,7 @@ struct HomeView: View {
 
                 Section("Goals") {
                     ForEach(data.goals) { goal in
-                        let c = Category.with(id: goal.categoryID)
+                        let c = data.category(goal.categoryID)
                         let done = data.minutes(category: goal.categoryID, in: week)
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
@@ -76,7 +76,7 @@ struct HomeView: View {
             }
             .sheet(isPresented: $logging) { LogSheet(entry: nil) }
             .sheet(item: $editing) { LogSheet(entry: $0) }
-            .sheet(item: $timerSide) { TimerSheet(side: $0) }
+            .sheet(item: $timerSide) { TimerSheet(side: $0, data: store.data) }
             .refreshable { await syncHealth() }
             .task { await syncHealth() }
             .task(id: data.activeTimer) {
@@ -103,10 +103,11 @@ struct HomeView: View {
 }
 
 struct EntryRow: View {
+    @Environment(Store.self) private var store
     let entry: Entry
 
     var body: some View {
-        let c = Category.with(id: entry.categoryID)
+        let c = store.data.category(entry.categoryID)
         HStack {
             Image(systemName: c?.symbol ?? "circle").foregroundStyle(Color.side(entry.side)).frame(width: 28)
             VStack(alignment: .leading) {
@@ -130,7 +131,7 @@ struct TimerButton: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: "timer").foregroundStyle(Color.side(side))
-                Text("\(side.label) timer").foregroundStyle(.primary)
+                Text("\(side.label) Timer").foregroundStyle(.primary)
             }
             .font(.subheadline.weight(.medium))
             .padding(.horizontal, 12).padding(.vertical, 8)
@@ -141,11 +142,12 @@ struct TimerButton: View {
 }
 
 struct RunningTimerRow: View {
+    @Environment(Store.self) private var store
     let timer: ActiveTimer
     let stop: () -> Void
 
     var body: some View {
-        let c = Category.with(id: timer.categoryID)
+        let c = store.data.category(timer.categoryID)
         HStack {
             Image(systemName: "timer").foregroundStyle(Color.side(timer.side))
             VStack(alignment: .leading) {

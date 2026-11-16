@@ -3,13 +3,15 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(Store.self) private var store
     @State private var editingGoal: Goal?
+    @State private var addingActivity = false
+    @AppStorage(TimerSound.key) private var timerSound = TimerSound.chime.rawValue
 
     var body: some View {
         @Bindable var store = store
         Form {
             Section("Goals") {
                 ForEach(store.data.goals) { goal in
-                    let c = Category.with(id: goal.categoryID)
+                    let c = store.data.category(goal.categoryID)
                     Button { editingGoal = goal } label: {
                         LabeledContent {
                             Text("\(goal.minutesPerDay) min × \(goal.daysPerWeek)d")
@@ -26,8 +28,34 @@ struct SettingsView: View {
                 }
                 Button("Add goal", systemImage: "plus") {
                     let used = Set(store.data.goals.map(\.categoryID))
-                    editingGoal = Goal(categoryID: Category.growth.first { !used.contains($0.id) }?.id ?? "reading", minutesPerDay: 15, daysPerWeek: 5)
+                    editingGoal = Goal(categoryID: store.data.categories(.growth).first { !used.contains($0.id) }?.id ?? "reading", minutesPerDay: 15, daysPerWeek: 5)
                 }
+            }
+
+            Section {
+                ForEach(store.data.customCategories.filter { !$0.archived }) { c in
+                    Label {
+                        LabeledContent(c.name, value: c.side.label)
+                    } icon: {
+                        Image(systemName: c.symbol).foregroundStyle(Color.side(c.side))
+                    }
+                    .swipeActions {
+                        Button("Remove", systemImage: "trash", role: .destructive) { store.archive(c) }
+                            .tint(.red)
+                    }
+                }
+                Button("Add activity", systemImage: "plus") { addingActivity = true }
+            } header: {
+                Text("Custom activities")
+            } footer: {
+                Text("Removing an activity hides it from the lists; time you already logged keeps it.")
+            }
+
+            Section("Timer") {
+                Picker("Alarm sound", selection: $timerSound) {
+                    ForEach(TimerSound.allCases) { Text($0.label).tag($0.rawValue) }
+                }
+                .onChange(of: timerSound) { _, new in TimerSound(rawValue: new)?.preview() }
             }
 
             Section {
@@ -49,6 +77,7 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .sheet(item: $editingGoal) { GoalSheet(goal: $0) }
+        .sheet(isPresented: $addingActivity) { ActivitySheet() }
     }
 
     private func setHealth(_ on: Bool) async {
@@ -72,9 +101,7 @@ struct GoalSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Picker("Area", selection: $goal.categoryID) {
-                    ForEach(Category.growth) { Label($0.name, systemImage: $0.symbol).tag($0.id) }
-                }
+                ActivityPicker(side: .growth, selection: $goal.categoryID)
                 TargetFields(perDay: $goal.minutesPerDay, days: $goal.daysPerWeek)
             }
             .navigationTitle("Goal")
@@ -85,5 +112,60 @@ struct GoalSheet: View {
             }
         }
         .presentationDetents([.medium])
+    }
+}
+
+/// Create a custom growth or fun activity with a name and icon.
+struct ActivitySheet: View {
+    @Environment(Store.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var side = Side.growth
+    @State private var symbol = Category.customSymbols[0]
+
+    private var trimmed: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Picker("Side", selection: $side) {
+                    ForEach(Side.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+
+                TextField("Name, e.g. Gardening", text: $name)
+                    .onChange(of: name) { _, new in if new.count > 30 { name = String(new.prefix(30)) } }
+
+                Section("Icon") {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
+                        ForEach(Category.customSymbols, id: \.self) { s in
+                            Button { symbol = s } label: {
+                                Image(systemName: s)
+                                    .font(.title3)
+                                    .frame(width: 44, height: 44)
+                                    .foregroundStyle(symbol == s ? Color.white : Color.side(side))
+                                    .background(symbol == s ? Color.side(side) : Color.clear, in: .circle)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(s.replacingOccurrences(of: ".fill", with: "").replacingOccurrences(of: ".", with: " "))
+                            .accessibilityAddTraits(symbol == s ? .isSelected : [])
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            .navigationTitle("New Activity")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        store.add(Category(id: "custom-\(UUID().uuidString)", name: trimmed, symbol: symbol, side: side))
+                        dismiss()
+                    }
+                    .disabled(trimmed.isEmpty)
+                }
+            }
+        }
     }
 }

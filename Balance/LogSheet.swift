@@ -1,12 +1,15 @@
 import SwiftUI
 
-/// Log or edit minutes. New entries default to the last-used side/category so a repeat log is 3 taps.
+/// Log or edit time. New entries default to the last-used side/category so a repeat log is 3 taps.
 struct LogSheet: View {
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
     @AppStorage("lastSide") private var lastSide = Side.growth.rawValue
     @AppStorage("lastCategory") private var lastCategory = "reading"
     @State private var draft: Entry
+    @State private var custom = false
+    @State private var start = Date.now.addingTimeInterval(-3600)
+    @State private var end = Date.now
     private let isNew: Bool
 
     init(entry: Entry?) {
@@ -16,6 +19,8 @@ struct LogSheet: View {
         _draft = State(initialValue: entry ?? Entry(side: side, categoryID: cat, minutes: 30, date: .now))
     }
 
+    private var customMinutes: Int { AppData.roundedMinutes(from: start, to: end) }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -24,53 +29,99 @@ struct LogSheet: View {
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: draft.side) { _, side in
-                    if Category.with(id: draft.categoryID)?.side != side { draft.categoryID = Category.list(side)[0].id }
+                    if store.data.category(draft.categoryID)?.side != side { draft.categoryID = store.data.categories(side)[0].id }
                 }
 
-                Picker("Activity", selection: $draft.categoryID) {
-                    ForEach(Category.list(draft.side)) { Label($0.name, systemImage: $0.symbol).tag($0.id) }
+                ActivityPicker(side: draft.side, selection: $draft.categoryID)
+
+                Section {
+                    MinutesPicker(minutes: $draft.minutes, color: .side(draft.side), custom: $custom)
+                    if custom {
+                        DatePicker("Start", selection: $start, in: ...Date.now)
+                        DatePicker("End", selection: $end, in: start...Date.now)
+                        LabeledContent("Time spent", value: customMinutes > 0 ? customMinutes.minutesText : "—")
+                    }
+                } header: {
+                    Text("Time spent")
+                } footer: {
+                    if custom { Text("Rounded to the nearest 5 minutes.") }
                 }
 
-                Section("Time spent") {
-                    MinutesPicker(minutes: $draft.minutes, color: .side(draft.side))
+                if !custom {
+                    DatePicker("When", selection: $draft.date, in: ...Date.now)
                 }
-
-                DatePicker("When", selection: $draft.date, in: ...Date.now)
             }
-            .navigationTitle(isNew ? "Log time" : "Edit entry")
+            .navigationTitle(isNew ? "Log Time" : "Edit Entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        if custom {
+                            draft.minutes = customMinutes
+                            draft.date = start
+                        }
                         store.upsert(draft)
                         lastSide = draft.side.rawValue
                         lastCategory = draft.categoryID
                         dismiss()
                     }
+                    .disabled(custom && customMinutes <= 0)
                 }
             }
         }
     }
 }
 
-/// Preset chips (15m … 4h) plus a 5-minute stepper for anything else.
+/// Built-in and custom activities for one side; keeps an archived current choice visible when editing.
+struct ActivityPicker: View {
+    @Environment(Store.self) private var store
+    let side: Side
+    @Binding var selection: String
+
+    var body: some View {
+        var options = store.data.categories(side)
+        if !options.contains(where: { $0.id == selection }), let current = store.data.category(selection) {
+            options.append(current)
+        }
+        return Picker("Activity", selection: $selection) {
+            ForEach(options) { Label($0.name, systemImage: $0.symbol).tag($0.id) }
+        }
+    }
+}
+
+/// Preset chips (15m … 4h) plus a 5-minute stepper; optionally a "Custom" chip the caller handles.
 struct MinutesPicker: View {
     @Binding var minutes: Int
     let color: Color
+    var custom: Binding<Bool>?
     static let presets = [15, 30, 60, 90, 120, 180, 240]
 
     var body: some View {
+        let isCustom = custom?.wrappedValue == true
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
             ForEach(Self.presets, id: \.self) { m in
-                Button { minutes = m } label: {
-                    Text(m.minutesShort).lineLimit(1).minimumScaleFactor(0.7).frame(maxWidth: .infinity)
+                chip(m.minutesShort, selected: !isCustom && minutes == m) {
+                    minutes = m
+                    custom?.wrappedValue = false
                 }
-                .buttonStyle(.bordered)
-                .tint(minutes == m ? color : .secondary)
                 .accessibilityLabel(m.minutesText)
             }
+            if let custom {
+                chip("Custom", selected: isCustom) { custom.wrappedValue = true }
+                    .accessibilityLabel("Custom start and end time")
+            }
         }
-        Stepper(minutes.minutesText, value: $minutes, in: 1...1440, step: 5)
+        if !isCustom {
+            Stepper(minutes.minutesText, value: $minutes, in: 1...1440, step: 5)
+        }
+    }
+
+    private func chip(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).lineLimit(1).minimumScaleFactor(0.7).frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .tint(selected ? color : .secondary)
     }
 }

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UIKit
 @testable import Balance
 
 struct BalanceTests {
@@ -78,6 +79,33 @@ struct BalanceTests {
         store.startTimer(ActiveTimer(side: .fun, categoryID: "gaming", start: start, minutes: 60))
         store.stopTimer(at: start.addingTimeInterval(10))
         #expect(store.data.entries.count == 2)
+    }
+
+    @Test func customTimeRoundsToNearestFive() {
+        let s = Date(timeIntervalSince1970: 0)
+        #expect(AppData.roundedMinutes(from: s, to: s.addingTimeInterval(92 * 60)) == 90)
+        #expect(AppData.roundedMinutes(from: s, to: s.addingTimeInterval(93 * 60)) == 95)
+        #expect(AppData.roundedMinutes(from: s, to: s.addingTimeInterval(2 * 60)) == 0)
+    }
+
+    @MainActor @Test func customActivitiesListAndArchive() {
+        let store = Store(url: URL.temporaryDirectory.appending(path: "\(UUID().uuidString).json"))
+        let garden = Category(id: "custom-1", name: "Gardening", symbol: "leaf.fill", side: .growth)
+        store.add(garden)
+        #expect(store.data.categories(.growth).contains(garden))
+        #expect(!store.data.categories(.fun).contains(garden))
+        store.archive(garden)
+        #expect(!store.data.categories(.growth).contains { $0.id == "custom-1" })
+        #expect(store.data.category("custom-1")?.name == "Gardening") // old entries still resolve
+    }
+
+    @Test func allIconsAndSoundsExist() {
+        for s in Category.customSymbols + Category.all.map(\.symbol) {
+            #expect(UIImage(systemName: s) != nil, "missing SF Symbol \(s)")
+        }
+        for sound in TimerSound.allCases where sound != .standard {
+            #expect(Bundle.main.url(forResource: sound.rawValue, withExtension: "wav") != nil, "missing \(sound.rawValue).wav")
+        }
     }
 
     @MainActor @Test func storeRoundTripAndCorruptFileIsKept() throws {

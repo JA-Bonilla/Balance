@@ -54,6 +54,17 @@ final class Store {
         save()
     }
 
+    func add(_ category: Category) {
+        data.customCategories.append(category)
+        save()
+    }
+
+    func archive(_ category: Category) {
+        guard let i = data.customCategories.firstIndex(where: { $0.id == category.id }) else { return }
+        data.customCategories[i].archived = true
+        save()
+    }
+
     func startTimer(_ timer: ActiveTimer) {
         data.activeTimer = timer
         save()

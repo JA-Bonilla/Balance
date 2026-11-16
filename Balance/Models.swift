@@ -10,12 +10,14 @@ enum Source: String, Codable {
     case manual, health
 }
 
-struct Category: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let symbol: String
-    let side: Side
-    let blurb: String
+struct Category: Identifiable, Hashable, Codable {
+    var id: String
+    var name: String
+    var symbol: String
+    var side: Side
+    var blurb: String = ""
+    /// Removed custom activities stay stored so old entries still show their name and icon.
+    var archived = false
 
     static let growth: [Category] = [
         .init(id: "reading", name: "Reading", symbol: "book.fill", side: .growth, blurb: "Books, articles, long-form reading"),
@@ -43,8 +45,17 @@ struct Category: Identifiable, Hashable {
     ]
 
     static let all = growth + fun
-    static func with(id: String) -> Category? { all.first { $0.id == id } }
     static func list(_ side: Side) -> [Category] { side == .growth ? growth : fun }
+
+    /// Icons offered for custom activities.
+    static let customSymbols = [
+        "star.fill", "heart.fill", "leaf.fill", "flame.fill", "bolt.fill", "sun.max.fill",
+        "moon.fill", "figure.walk", "figure.yoga", "dumbbell.fill", "bicycle", "tennisball.fill",
+        "soccerball", "basketball.fill", "book.closed.fill", "pencil", "paintpalette.fill", "camera.fill",
+        "guitars.fill", "pianokeys", "globe", "laptopcomputer", "gamecontroller.fill", "tv.fill",
+        "film.fill", "popcorn.fill", "cup.and.saucer.fill", "wineglass.fill", "fork.knife", "cart.fill",
+        "car.fill", "airplane", "pawprint.fill", "person.2.fill", "bubble.left.fill", "music.mic",
+    ]
 }
 
 struct Goal: Codable, Identifiable, Hashable {
@@ -99,6 +110,17 @@ struct AppData: Codable {
     /// Health samples the user deleted, so re-imports skip them.
     var hiddenHealthIDs: Set<UUID> = []
     var activeTimer: ActiveTimer?
+    var customCategories: [Category] = []
+
+    /// Built-in plus the user's active custom activities for one side.
+    func categories(_ side: Side) -> [Category] {
+        Category.list(side) + customCategories.filter { $0.side == side && !$0.archived }
+    }
+
+    /// Any category by id, including archived custom ones.
+    func category(_ id: String) -> Category? {
+        Category.all.first { $0.id == id } ?? customCategories.first { $0.id == id }
+    }
 
     func minutes(_ side: Side, in interval: DateInterval) -> Int {
         entries.filter { $0.side == side && interval.contains($0.date) }.reduce(0) { $0 + $1.minutes }
@@ -127,6 +149,12 @@ extension AppData {
         healthEnabled = try c.decodeIfPresent(Bool.self, forKey: .healthEnabled) ?? false
         hiddenHealthIDs = try c.decodeIfPresent(Set<UUID>.self, forKey: .hiddenHealthIDs) ?? []
         activeTimer = try c.decodeIfPresent(ActiveTimer.self, forKey: .activeTimer)
+        customCategories = try c.decodeIfPresent([Category].self, forKey: .customCategories) ?? []
+    }
+
+    /// Minutes between two times, rounded to the nearest 5.
+    static func roundedMinutes(from start: Date, to end: Date) -> Int {
+        Int((end.timeIntervalSince(start) / 300).rounded()) * 5
     }
 }
 
