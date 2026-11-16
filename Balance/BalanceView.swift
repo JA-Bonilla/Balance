@@ -54,9 +54,9 @@ struct BalanceView: View {
             .frame(height: 30)
 
             HStack {
-                Label("Fun \(fun)m", systemImage: "circle.fill").labelStyle(Dot(color: .fun))
+                Label("Fun \(fun.minutesShort)", systemImage: "circle.fill").labelStyle(Dot(color: .fun))
                 Spacer()
-                Label("Growth \(growth)m", systemImage: "circle.fill").labelStyle(Dot(color: .growth))
+                Label("Growth \(growth.minutesShort)", systemImage: "circle.fill").labelStyle(Dot(color: .growth))
             }
             .font(.caption.weight(.semibold))
 

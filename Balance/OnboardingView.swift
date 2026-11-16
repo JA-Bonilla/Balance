@@ -50,7 +50,7 @@ struct TargetFields: View {
     var body: some View {
         Stepper("\(perDay) min a day", value: $perDay, in: 5...240, step: 5)
         Stepper("\(days) day\(days == 1 ? "" : "s") a week", value: $days, in: 1...7)
-        LabeledContent("Weekly target", value: "\(perDay * days) min")
+        LabeledContent("Weekly target", value: (perDay * days).minutesText)
     }
 }
 

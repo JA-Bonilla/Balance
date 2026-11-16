@@ -31,20 +31,13 @@ struct LogSheet: View {
                     ForEach(Category.list(draft.side)) { Label($0.name, systemImage: $0.symbol).tag($0.id) }
                 }
 
-                Section("Minutes") {
-                    HStack {
-                        ForEach([15, 30, 60], id: \.self) { m in
-                            Button("\(m)") { draft.minutes = m }
-                                .buttonStyle(.bordered)
-                                .tint(draft.minutes == m ? Color.side(draft.side) : .secondary)
-                        }
-                    }
-                    Stepper("\(draft.minutes) min", value: $draft.minutes, in: 1...1440, step: 5)
+                Section("Time spent") {
+                    MinutesPicker(minutes: $draft.minutes, color: .side(draft.side))
                 }
 
                 DatePicker("When", selection: $draft.date, in: ...Date.now)
             }
-            .navigationTitle(isNew ? "Log minutes" : "Edit entry")
+            .navigationTitle(isNew ? "Log time" : "Edit entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -58,5 +51,26 @@ struct LogSheet: View {
                 }
             }
         }
+    }
+}
+
+/// Preset chips (15m … 4h) plus a 5-minute stepper for anything else.
+struct MinutesPicker: View {
+    @Binding var minutes: Int
+    let color: Color
+    static let presets = [15, 30, 60, 90, 120, 180, 240]
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+            ForEach(Self.presets, id: \.self) { m in
+                Button { minutes = m } label: {
+                    Text(m.minutesShort).lineLimit(1).minimumScaleFactor(0.7).frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(minutes == m ? color : .secondary)
+                .accessibilityLabel(m.minutesText)
+            }
+        }
+        Stepper(minutes.minutesText, value: $minutes, in: 1...1440, step: 5)
     }
 }

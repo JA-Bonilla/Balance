@@ -16,6 +16,7 @@ final class Store {
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         do {
             data = try JSONDecoder.balance.decode(AppData.self, from: Data(contentsOf: url))
+            finishTimerIfDue()
         } catch {
             // Never overwrite a file we couldn't read: set it aside so the user can recover it.
             let backup = url.deletingPathExtension().appendingPathExtension("unreadable-\(Int(Date.now.timeIntervalSince1970)).json")
@@ -51,6 +52,27 @@ final class Store {
     func delete(_ goal: Goal) {
         data.goals.removeAll { $0.id == goal.id }
         save()
+    }
+
+    func startTimer(_ timer: ActiveTimer) {
+        data.activeTimer = timer
+        save()
+    }
+
+    /// Ends the timer and logs the time actually spent (capped at the planned length). Under a minute logs nothing.
+    func stopTimer(at now: Date = .now) {
+        guard let t = data.activeTimer else { return }
+        let minutes = min(t.minutes, Int((now.timeIntervalSince(t.start) / 60).rounded()))
+        data.activeTimer = nil
+        if minutes >= 1 {
+            data.entries.append(Entry(side: t.side, categoryID: t.categoryID, minutes: minutes, date: t.start))
+        }
+        save()
+    }
+
+    /// Logs a timer that ran out while the app was closed or in the background.
+    func finishTimerIfDue(now: Date = .now) {
+        if let t = data.activeTimer, now >= t.end { stopTimer(at: now) }
     }
 
     /// Replaces Health-sourced entries inside `interval` with a fresh import, so edits/deletions in Health carry over.

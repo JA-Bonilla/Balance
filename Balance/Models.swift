@@ -83,12 +83,22 @@ struct Entry: Codable, Identifiable, Hashable {
     var source: Source = .manual
 }
 
+/// A running countdown; becomes an Entry when it ends or is stopped.
+struct ActiveTimer: Codable, Hashable {
+    var side: Side
+    var categoryID: String
+    var start: Date
+    var minutes: Int
+    var end: Date { start.addingTimeInterval(Double(minutes) * 60) }
+}
+
 struct AppData: Codable {
     var goals: [Goal] = []
     var entries: [Entry] = []
     var healthEnabled = false
     /// Health samples the user deleted, so re-imports skip them.
     var hiddenHealthIDs: Set<UUID> = []
+    var activeTimer: ActiveTimer?
 
     func minutes(_ side: Side, in interval: DateInterval) -> Int {
         entries.filter { $0.side == side && interval.contains($0.date) }.reduce(0) { $0 + $1.minutes }
@@ -116,6 +126,21 @@ extension AppData {
         entries = try c.decodeIfPresent([Entry].self, forKey: .entries) ?? []
         healthEnabled = try c.decodeIfPresent(Bool.self, forKey: .healthEnabled) ?? false
         hiddenHealthIDs = try c.decodeIfPresent(Set<UUID>.self, forKey: .hiddenHealthIDs) ?? []
+        activeTimer = try c.decodeIfPresent(ActiveTimer.self, forKey: .activeTimer)
+    }
+}
+
+extension Int {
+    /// Minutes as "45 min", "2 hr", "1 hr 30 min".
+    var minutesText: String {
+        let h = self / 60, m = self % 60
+        return h == 0 ? "\(m) min" : m == 0 ? "\(h) hr" : "\(h) hr \(m) min"
+    }
+
+    /// Compact form for chips and labels: "45m", "2h", "1h 30m".
+    var minutesShort: String {
+        let h = self / 60, m = self % 60
+        return h == 0 ? "\(m)m" : m == 0 ? "\(h)h" : "\(h)h \(m)m"
     }
 }
 

@@ -46,6 +46,40 @@ struct BalanceTests {
         #expect(store.data.entries.isEmpty)
     }
 
+    @Test func minutesFormatting() {
+        #expect(45.minutesText == "45 min")
+        #expect(60.minutesText == "1 hr")
+        #expect(90.minutesText == "1 hr 30 min")
+        #expect(240.minutesShort == "4h")
+        #expect(90.minutesShort == "1h 30m")
+    }
+
+    @MainActor @Test func timerLogsFullEarlyOrNothing() {
+        let store = Store(url: URL.temporaryDirectory.appending(path: "\(UUID().uuidString).json"))
+        let start = Date(timeIntervalSince1970: 1_000_000)
+
+        // Ran out while the app was closed: logs the full planned length.
+        store.startTimer(ActiveTimer(side: .growth, categoryID: "reading", start: start, minutes: 30))
+        store.finishTimerIfDue(now: start.addingTimeInterval(3600))
+        #expect(store.data.activeTimer == nil)
+        #expect(store.data.entries.last?.minutes == 30)
+        #expect(store.data.entries.last?.date == start)
+
+        // Not due yet: keeps running.
+        store.startTimer(ActiveTimer(side: .fun, categoryID: "gaming", start: start, minutes: 60))
+        store.finishTimerIfDue(now: start.addingTimeInterval(600))
+        #expect(store.data.activeTimer != nil)
+
+        // Stopped early: logs time so far.
+        store.stopTimer(at: start.addingTimeInterval(20 * 60))
+        #expect(store.data.entries.last?.minutes == 20)
+
+        // Stopped within seconds: logs nothing.
+        store.startTimer(ActiveTimer(side: .fun, categoryID: "gaming", start: start, minutes: 60))
+        store.stopTimer(at: start.addingTimeInterval(10))
+        #expect(store.data.entries.count == 2)
+    }
+
     @MainActor @Test func storeRoundTripAndCorruptFileIsKept() throws {
         let dir = URL.temporaryDirectory.appending(path: UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
