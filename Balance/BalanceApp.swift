@@ -5,6 +5,11 @@ struct BalanceApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var store = Store()
 
+    init() {
+        // SwiftUI's DatePicker has no step option; this sets every time picker in the app to 5-minute steps.
+        UIDatePicker.appearance().minuteInterval = 5
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {

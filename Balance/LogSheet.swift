@@ -8,8 +8,9 @@ struct LogSheet: View {
     @AppStorage("lastCategory") private var lastCategory = "reading"
     @State private var draft: Entry
     @State private var custom = false
-    @State private var start = Date.now.addingTimeInterval(-3600)
-    @State private var end = Date.now
+    // Start on 5-minute marks so the values match what the 5-minute pickers display.
+    @State private var end = Date(timeIntervalSince1970: (Date.now.timeIntervalSince1970 / 300).rounded(.down) * 300)
+    @State private var start = Date(timeIntervalSince1970: (Date.now.timeIntervalSince1970 / 300).rounded(.down) * 300 - 3600)
     private let isNew: Bool
 
     init(entry: Entry?) {
