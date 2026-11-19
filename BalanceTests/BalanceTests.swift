@@ -127,4 +127,28 @@ struct BalanceTests {
         let files = try FileManager.default.contentsOfDirectory(atPath: dir.path)
         #expect(files.contains { $0.contains("unreadable") })
     }
+
+    @Test func bonsiGrowsWithLifetimeGrowthHours() {
+        func stage(_ minutes: Int, side: Side = .growth) -> Int {
+            var d = AppData()
+            d.entries = [Entry(side: side, categoryID: "reading", minutes: minutes, date: .now)]
+            return d.bonsiStage
+        }
+        #expect(AppData().bonsiStage == 0)
+        #expect(stage(59) == 0)
+        #expect(stage(60) == 1)
+        #expect(stage(10 * 60) == 2)
+        #expect(stage(30 * 60) == 3)
+        #expect(stage(30 * 60, side: .fun) == 0)   // fun time doesn't grow the tree
+    }
+
+    @Test func skyInterpolatesBetweenStates() {
+        #expect(SkyParams.at(-1).rim == 1)                 // total eclipse
+        #expect(SkyParams.at(0).stars == 3)                // golden hour
+        #expect(SkyParams.at(1).desert == 1)               // desert
+        #expect(SkyParams.at(5).desert == 1)               // clamped
+        let mid = SkyParams.at(0.25)
+        #expect(mid.clouds > 0 && mid.clouds < 1)
+        #expect(mid.sunR > SkyParams.golden.sunR && mid.sunR < SkyParams.day.sunR)
+    }
 }

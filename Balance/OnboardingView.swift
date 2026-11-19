@@ -27,16 +27,19 @@ struct OnboardingView: View {
                     } footer: {
                         Text("Start with something doable. You can change it anytime.")
                     }
+                    .listRowBackground(Color.surface)
                     Section {
                         Text("We'll also track fun, so you can see the balance between growing and enjoying yourself.")
                             .foregroundStyle(.secondary)
                     }
+                    .listRowBackground(Color.surface)
                     Button("Start") {
                         store.upsert(Goal(categoryID: category.id, minutesPerDay: perDay, daysPerWeek: days))
                     }
                     .bold()
                 }
                 .navigationTitle("Weekly target")
+                .charcoalBackground()
             }
         }
     }

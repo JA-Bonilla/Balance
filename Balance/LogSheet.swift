@@ -47,12 +47,14 @@ struct LogSheet: View {
                 } footer: {
                     if custom { Text("Rounded to the nearest 5 minutes.") }
                 }
+                .listRowBackground(Color.surface)
 
                 if !custom {
                     DatePicker("When", selection: $draft.date, in: ...Date.now)
                 }
             }
             .navigationTitle(isNew ? "Log Time" : "Edit Entry")
+            .charcoalBackground()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -71,6 +73,7 @@ struct LogSheet: View {
                 }
             }
         }
+        .tint(Color.side(draft.side))
     }
 }
 
@@ -88,6 +91,8 @@ struct ActivityPicker: View {
         return Picker("Activity", selection: $selection) {
             ForEach(options) { Label($0.name, systemImage: $0.symbol).tag($0.id) }
         }
+        .tint(Color.side(side))
+        .id(side) // rebuild the menu when the side flips so it picks up the new tint
     }
 }
 

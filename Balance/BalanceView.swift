@@ -1,74 +1,69 @@
 import SwiftUI
 
-/// Centered split gauge: marker slides toward fun (left, gold) or growth (right, blue); centered = balanced.
+/// Caption block under the sky: totals and a one-line read on the balance.
 struct BalanceView: View {
     let growth: Int
     let fun: Int
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var balance: Double { AppData.balance(growth: growth, fun: fun) }
 
-    private enum Lean { case empty, balanced, growth, fun, growthHeavy, funHeavy }
-
-    private var lean: Lean {
-        if growth + fun == 0 { return .empty }
-        switch balance {
-        case ..<(-0.5): return .funHeavy
-        case ..<(-0.15): return .fun
-        case ...0.15: return .balanced
-        case ...0.5: return .growth
-        default: return .growthHeavy
-        }
-    }
-
     private var caption: String {
-        switch lean {
-        case .empty: "Log some minutes to see your balance"
-        case .balanced: "Balanced"
-        case .growth: "Leaning toward growth"
-        case .fun: "Leaning toward fun"
-        case .growthHeavy: "Growth-heavy"
-        case .funHeavy: "Fun-heavy"
+        if growth + fun == 0 { return "Log some minutes to wake your Bonsi" }
+        switch balance {
+        case ..<(-0.8): return "Deep night · the moon covers the sun"
+        case ..<(-0.45): return "Dusk · the moon is taking over"
+        case ..<(-0.15): return "Moon is rising"
+        case ...0.15: return "Golden hour · in balance"
+        case ...0.45: return "Sun is rising"
+        case ...0.8: return "Clear skies · lots of sun"
+        default: return "Heat wave · time to rest and play"
         }
     }
 
     var body: some View {
         VStack(spacing: 12) {
-            GeometryReader { geo in
-                let x = CGFloat(balance) * (geo.size.width / 2 - 13)
-                ZStack {
-                    Capsule().fill(Color.secondary.opacity(0.2)).frame(height: 14)
-                    Capsule().fill(Color.fun).frame(width: max(-x, 0), height: 14).offset(x: min(x, 0) / 2)
-                    Capsule().fill(Color.growth).frame(width: max(x, 0), height: 14).offset(x: max(x, 0) / 2)
-                    Rectangle().fill(Color.primary.opacity(0.3)).frame(width: 2, height: 22)
-                    Circle()
-                        .fill(.background)
-                        .overlay(Circle().stroke(lean == .balanced ? Color.primary : Color.primary.opacity(0.5), lineWidth: 2))
-                        .frame(width: 26, height: 26)
-                        .scaleEffect(lean == .balanced ? 1.15 : 1)
-                        .offset(x: x)
-                }
-                .frame(maxHeight: .infinity)
-                .animation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.65), value: balance)
-            }
-            .frame(height: 30)
-
             HStack {
-                Label("Fun \(fun.minutesShort)", systemImage: "circle.fill").labelStyle(Dot(color: .fun))
+                Label("Growth \(growth.minutesShort)", systemImage: "sun.max.fill").labelStyle(Dot(color: .growth))
                 Spacer()
-                Label("Growth \(growth.minutesShort)", systemImage: "circle.fill").labelStyle(Dot(color: .growth))
+                Label("Fun \(fun.minutesShort)", systemImage: "moon.fill").labelStyle(Dot(color: .fun))
             }
             .font(.caption.weight(.semibold))
 
-            Text(caption).font(.headline)
+            Text(caption).font(.headline).multilineTextAlignment(.center)
         }
+        .shadow(color: .black.opacity(0.55), radius: 3, y: 1) // keeps text legible over bright sand/sky
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(caption)
         .accessibilityValue("\(growth) growth minutes, \(fun) fun minutes this week")
     }
 }
 
-/// Colored dot + primary-colored text (gold text fails contrast on light backgrounds).
+/// The hero graphic, drawn full-bleed behind the home list. Sun = growth, moon = fun, Bonsi in the middle.
+/// Balanced (1 growth : 5 fun) is golden hour; more fun slides the moon over the sun into night; more growth
+/// brightens the sky and finally scorches it into desert.
+struct SkyBackdrop: View {
+    let growth: Int
+    let fun: Int
+    var stage = 3
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var balance: Double { growth + fun == 0 ? 0 : AppData.balance(growth: growth, fun: fun) }
+
+    var body: some View {
+        LivingSky(balance: balance, stage: stage, reduceMotion: reduceMotion)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 1.4), value: balance)
+            // Bright skies (lots of growth) get a charcoal scrim behind the status bar and toolbar buttons for contrast.
+            .overlay(alignment: .top) {
+                let t = min(max(balance, 0), 1)
+                LinearGradient(colors: [Color.appBackground.opacity(0.1 + 0.27 * t), .clear], startPoint: .top, endPoint: .bottom)
+                    .frame(height: 140)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 1.4), value: balance)
+                    .allowsHitTesting(false)
+            }
+    }
+}
+
+/// Colored icon + primary-colored text (amber text fails contrast on light backgrounds).
 private struct Dot: LabelStyle {
     let color: Color
     func makeBody(configuration: Configuration) -> some View {
@@ -80,11 +75,10 @@ private struct Dot: LabelStyle {
 }
 
 #Preview {
-    VStack(spacing: 32) {
-        BalanceView(growth: 60, fun: 60)
-        BalanceView(growth: 150, fun: 40)
-        BalanceView(growth: 20, fun: 200)
-        BalanceView(growth: 0, fun: 0)
+    ZStack(alignment: .top) {
+        Color.appBackground
+        SkyBackdrop(growth: 60, fun: 300)
+        BalanceView(growth: 60, fun: 300).padding(.top, 440)
     }
-    .padding()
+    .ignoresSafeArea()
 }

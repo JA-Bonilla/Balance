@@ -31,6 +31,7 @@ struct SettingsView: View {
                     editingGoal = Goal(categoryID: store.data.categories(.growth).first { !used.contains($0.id) }?.id ?? "reading", minutesPerDay: 15, daysPerWeek: 5)
                 }
             }
+            .listRowBackground(Color.surface)
 
             Section {
                 ForEach(store.data.customCategories.filter { !$0.archived }) { c in
@@ -50,6 +51,7 @@ struct SettingsView: View {
             } footer: {
                 Text("Removing an activity hides it from the lists; time you already logged keeps it.")
             }
+            .listRowBackground(Color.surface)
 
             Section("Timer") {
                 Picker("Alarm sound", selection: $timerSound) {
@@ -57,6 +59,7 @@ struct SettingsView: View {
                 }
                 .onChange(of: timerSound) { _, new in TimerSound(rawValue: new)?.preview() }
             }
+            .listRowBackground(Color.surface)
 
             Section {
                 Toggle("Count Health workouts & mindful minutes", isOn: Binding(
@@ -69,13 +72,16 @@ struct SettingsView: View {
             } footer: {
                 Text("Workouts count as Exercise and mindful minutes as Meditation. Screen Time tracking needs a paid Apple Developer account and isn't available yet.")
             }
+            .listRowBackground(Color.surface)
 
             Section {
                 Text("Your data is a single file, balance.json, in Files › On My iPhone › Balance. Nothing leaves your phone.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
+            .listRowBackground(Color.surface)
         }
         .navigationTitle("Settings")
+        .charcoalBackground()
         .sheet(item: $editingGoal) { GoalSheet(goal: $0) }
         .sheet(isPresented: $addingActivity) { ActivitySheet() }
     }
@@ -105,6 +111,7 @@ struct GoalSheet: View {
                 TargetFields(perDay: $goal.minutesPerDay, days: $goal.daysPerWeek)
             }
             .navigationTitle("Goal")
+            .charcoalBackground()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -153,8 +160,10 @@ struct ActivitySheet: View {
                     }
                     .padding(.vertical, 4)
                 }
+                .listRowBackground(Color.surface)
             }
             .navigationTitle("New Activity")
+            .charcoalBackground()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -167,5 +176,6 @@ struct ActivitySheet: View {
                 }
             }
         }
+        .tint(Color.side(side))
     }
 }

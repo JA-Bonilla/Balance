@@ -20,7 +20,8 @@ struct BalanceApp: App {
                 }
             }
             .environment(store)
-            .tint(.accentInk)
+            .tint(.growth)
+            .preferredColorScheme(.dark)
             .alert("Balance", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) {
                 Button("OK") {}
             } message: {

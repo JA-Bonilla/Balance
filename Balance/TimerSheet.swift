@@ -28,8 +28,10 @@ struct TimerSheet: View {
                 } footer: {
                     Text("When the timer ends, the time is logged for you. Stop early to log just the time so far.")
                 }
+                .listRowBackground(Color.surface)
             }
             .navigationTitle("\(side.label) Timer")
+            .charcoalBackground()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -44,6 +46,7 @@ struct TimerSheet: View {
                 }
             }
         }
+        .tint(Color.side(side))
     }
 }
 

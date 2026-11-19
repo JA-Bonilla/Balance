@@ -5,16 +5,30 @@ struct HomeView: View {
     @State private var editing: Entry?
     @State private var logging = false
     @State private var timerSide: Side?
+    @State private var skyScroll: CGFloat = 0 // how far the list has scrolled from rest
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         let week = DateInterval.thisWeek()
         let data = store.data
         NavigationStack {
+            GeometryReader { geo in
+            let skyHeight = geo.size.width * 380 / 342
             List {
+                // The sky is a backdrop behind the list (see .background below); this row only reserves its space.
                 Section {
+                    Color.clear
+                        .frame(height: max(0, skyHeight - geo.safeAreaInsets.top - 56))
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     BalanceView(growth: data.minutes(.growth, in: week), fun: data.minutes(.fun, in: week))
-                        .padding(.vertical, 8)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+
+                Section {
                     if let t = data.activeTimer {
                         RunningTimerRow(timer: t) {
                             store.stopTimer()
@@ -27,9 +41,8 @@ struct HomeView: View {
                             TimerButton(side: .growth) { timerSide = .growth }
                         }
                     }
-                } header: {
-                    Text("This week")
                 }
+                .listRowBackground(Color.surface)
 
                 Section("Goals") {
                     ForEach(data.goals) { goal in
@@ -46,6 +59,7 @@ struct HomeView: View {
                         }
                     }
                 }
+                .listRowBackground(Color.surface)
 
                 Section("Recent") {
                     let recent = data.entries.sorted { $0.date > $1.date }.prefix(20)
@@ -62,17 +76,34 @@ struct HomeView: View {
                             }
                     }
                 }
+                .listRowBackground(Color.surface)
             }
-            .navigationTitle("Balance")
+            .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .scrollEdgeEffectHidden(true, for: .top) // no blurry bar over the sky
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .background(alignment: .top) {
+                // Full-bleed sky from the very top of the screen; the list scrolls over it.
+                SkyBackdrop(growth: data.minutes(.growth, in: week), fun: data.minutes(.fun, in: week), stage: data.bonsiStage)
+                    .offset(y: -max(skyScroll, 0)) // the sky and Bonsi scroll away with the list
+                    .ignoresSafeArea(edges: .top)
+            }
+            .background(Color.appBackground)
+            // At rest contentOffset.y == -contentInsets.top (status bar + nav bar), so the sum is the distance scrolled.
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, distance in
+                skyScroll = distance
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink { SettingsView() } label: { Image(systemName: "gearshape") }
+                    NavigationLink { SettingsView() } label: { ToolbarIcon(systemName: "gearshape") }
                         .accessibilityLabel("Settings")
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { logging = true } label: { Image(systemName: "plus") }
+                    Button { logging = true } label: { ToolbarIcon(systemName: "plus") }
                         .accessibilityLabel("Log minutes")
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .sheet(isPresented: $logging) { LogSheet(entry: nil) }
             .sheet(item: $editing) { LogSheet(entry: $0) }
@@ -87,6 +118,7 @@ struct HomeView: View {
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { store.finishTimerIfDue() }
+            }
             }
         }
     }
@@ -131,7 +163,7 @@ struct TimerButton: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: "timer").foregroundStyle(Color.side(side))
-                Text("\(side.label) Timer").foregroundStyle(.primary)
+                Text("\(side.label) Timer").foregroundStyle(Color.side(side))
             }
             .font(.subheadline.weight(.medium))
             .padding(.horizontal, 12).padding(.vertical, 8)
@@ -162,5 +194,18 @@ struct RunningTimerRow: View {
                 .buttonStyle(.bordered)
                 .accessibilityLabel("Stop timer and log time so far")
         }
+    }
+}
+
+/// Toolbar button over the sky: white glyph on a light translucent disc (no heavy glass or black).
+struct ToolbarIcon: View {
+    let systemName: String
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(.white)
+            .frame(width: 40, height: 40)
+            .background(.black.opacity(0.22), in: .circle)
+            .overlay(Circle().stroke(.white.opacity(0.22), lineWidth: 1))
     }
 }
