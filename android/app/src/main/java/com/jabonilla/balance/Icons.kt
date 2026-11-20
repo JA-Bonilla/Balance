@@ -1,0 +1,65 @@
+package com.jabonilla.balance
+
+private val icons: Map<String, Int> = mapOf(
+    "book.fill" to R.drawable.ic_menu_book,
+    "figure.run" to R.drawable.ic_directions_run,
+    "character.bubble.fill" to R.drawable.ic_translate,
+    "wrench.and.screwdriver.fill" to R.drawable.ic_handyman,
+    "brain.head.profile" to R.drawable.ic_psychology,
+    "square.and.pencil" to R.drawable.ic_edit_square,
+    "paintbrush.pointed.fill" to R.drawable.ic_brush,
+    "graduationcap.fill" to R.drawable.ic_school,
+    "music.note" to R.drawable.ic_music_note,
+    "frying.pan.fill" to R.drawable.ic_skillet,
+    "chevron.left.forwardslash.chevron.right" to R.drawable.ic_code,
+    "chart.line.uptrend.xyaxis" to R.drawable.ic_trending_up,
+    "bubble.left.and.bubble.right.fill" to R.drawable.ic_forum,
+    "play.tv.fill" to R.drawable.ic_smart_display,
+    "gamecontroller.fill" to R.drawable.ic_sports_esports,
+    "party.popper.fill" to R.drawable.ic_celebration,
+    "tv.fill" to R.drawable.ic_tv,
+    "safari.fill" to R.drawable.ic_explore,
+    "headphones" to R.drawable.ic_headphones,
+    "star.fill" to R.drawable.ic_star,
+    "heart.fill" to R.drawable.ic_favorite,
+    "leaf.fill" to R.drawable.ic_eco,
+    "flame.fill" to R.drawable.ic_local_fire_department,
+    "bolt.fill" to R.drawable.ic_bolt,
+    "sun.max.fill" to R.drawable.ic_sunny,
+    "moon.fill" to R.drawable.ic_dark_mode,
+    "figure.walk" to R.drawable.ic_directions_walk,
+    "figure.yoga" to R.drawable.ic_self_improvement,
+    "dumbbell.fill" to R.drawable.ic_fitness_center,
+    "bicycle" to R.drawable.ic_directions_bike,
+    "tennisball.fill" to R.drawable.ic_sports_tennis,
+    "soccerball" to R.drawable.ic_sports_soccer,
+    "basketball.fill" to R.drawable.ic_sports_basketball,
+    "book.closed.fill" to R.drawable.ic_book,
+    "pencil" to R.drawable.ic_edit,
+    "paintpalette.fill" to R.drawable.ic_palette,
+    "camera.fill" to R.drawable.ic_photo_camera,
+    "guitars.fill" to R.drawable.ic_library_music,
+    "pianokeys" to R.drawable.ic_piano,
+    "globe" to R.drawable.ic_public,
+    "laptopcomputer" to R.drawable.ic_laptop_mac,
+    "film.fill" to R.drawable.ic_movie,
+    "popcorn.fill" to R.drawable.ic_theaters,
+    "cup.and.saucer.fill" to R.drawable.ic_local_cafe,
+    "wineglass.fill" to R.drawable.ic_wine_bar,
+    "fork.knife" to R.drawable.ic_restaurant,
+    "cart.fill" to R.drawable.ic_shopping_cart,
+    "car.fill" to R.drawable.ic_directions_car,
+    "airplane" to R.drawable.ic_flight,
+    "pawprint.fill" to R.drawable.ic_pets,
+    "person.2.fill" to R.drawable.ic_group,
+    "bubble.left.fill" to R.drawable.ic_chat_bubble,
+    "music.mic" to R.drawable.ic_mic,
+)
+
+/** Material Symbol drawable for an SF Symbol name; unknown names get the circle. */
+fun symbolIcon(sf: String): Int = icons[sf] ?: R.drawable.ic_circle
+
+/** Accessibility label: drop ".fill", dots to spaces. */
+fun symbolLabel(sf: String): String = sf.replace(".fill", "").replace(".", " ")
+
+val symbolNames: Set<String> get() = icons.keys
