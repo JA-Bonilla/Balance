@@ -8,7 +8,7 @@ This main session is the manager. You run the feature workflow and the audit wor
 
 ## Product
 
-Balance is an iOS app (SwiftUI, iOS 26+, iPhone only) that helps John balance time spent on growth (reading, exercise, language, skill practice, meditation, and so on) against time spent on fun (social media, video, gaming, TV, and so on). Users log time manually, with start/end pickers or per-activity timers, and workouts and mindful minutes sync in from HealthKit. A target ratio of growth to fun and per-day goals drive the Balance view, a Bonsi character, and a living sky. Data is stored locally in `Documents/balance.json`. There is no backend and no Android app.
+Balance is an iOS app (SwiftUI, iOS 26+, iPhone only) that helps John balance time spent on growth (reading, exercise, language, skill practice, meditation, and so on) against time spent on fun (social media, video, gaming, TV, and so on). Users log time manually, with start/end pickers or per-activity timers, and workouts and mindful minutes sync in from HealthKit. A target ratio of growth to fun and per-day goals drive the Balance view, a Bonsi character, and a living sky. Data is stored locally in `Documents/balance.json`. There is no backend. An Android port (Kotlin, Jetpack Compose, Health Connect) is in progress under `android/`.
 
 ## Repo layout
 
@@ -35,17 +35,18 @@ Balance is an iOS app (SwiftUI, iOS 26+, iPhone only) that helps John balance ti
 | Platform | Build | Test | Lint |
 |---|---|---|---|
 | core | n/a (no core) | n/a | n/a |
-| android | n/a (no Android app) | n/a | n/a |
+| android | `cd android && ./gradlew assembleDebug` | `cd android && ./gradlew testDebugUnitTest` | unknown |
 | ios | `xcodebuild -scheme Balance -destination 'platform=iOS Simulator,name=iPhone 17e' build` | `xcodebuild -scheme Balance -destination 'platform=iOS Simulator,name=iPhone 17e' test` | unknown |
 
 If a command is `unknown`, agents report it as not run. They never guess a command.
 
-## This repo is iOS-only
+## This repo has an iOS app and an Android app
 
-- There is no `core/`, `android/`, or `ios/` folder. The iOS app lives in `Balance/` and `BalanceTests/`. The ios, ios-qa-tester, architect, audit and asset-designer agent files already point there.
-- The core and android agent files stay in `.claude/agents/` for reuse but are never run here.
-- Never start the core, android, core-qa-tester, or android-qa-tester agents. Plans contain iOS tasks only, and the workflow skips every platform the plan does not touch.
-- The branch chain is `plan/<slug>` then `ios/<slug>`.
+- There is no `core/` or `ios/` folder. The iOS app lives in `Balance/` and `BalanceTests/`. The Android app (Kotlin, Jetpack Compose) lives in `android/`, added by the Android port.
+- Android toolchain (installed via Homebrew): JDK 17 at `/opt/homebrew/opt/openjdk@17`, Android SDK at `/opt/homebrew/share/android-commandlinetools`, Gradle. Agents set `JAVA_HOME` and `ANDROID_HOME` to those paths in their shell.
+- The core agent files stay in `.claude/agents/` for reuse but are never run here. Never start the core or core-qa-tester agents.
+- The android and android-qa-tester agents run only when the plan has Android tasks.
+- The branch chain is `plan/<slug>`, then `android/<slug>` or `ios/<slug>` (both start from `plan/<slug>`, no core).
 - Existing uncommitted work on `main` (modified Swift files, `BonsiView.swift`, `LivingSky.swift`) belongs to John. Never stash, reset, or commit it unless John asks. Start feature branches only after John has committed or confirmed how to handle it.
 
 ## Team
