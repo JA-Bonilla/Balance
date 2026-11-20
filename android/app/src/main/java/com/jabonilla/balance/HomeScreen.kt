@@ -1,5 +1,6 @@
 package com.jabonilla.balance
 
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -123,7 +124,7 @@ fun HomeScreen(store: Store, onSettings: () -> Unit) {
                 val recent = data.entries.sortedByDescending { it.date }.take(20)
                 if (recent.isEmpty()) item { Text("Nothing logged yet. Tap + to log minutes.", Modifier.padding(horizontal = 20.dp), color = muted) }
                 items(recent, key = { it.id }) { entry ->
-                    Box(Modifier.padding(horizontal = 16.dp).fillMaxWidth()) {
+                    Box(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp))) {
                         SwipeRow({ store.delete(entry) }) { EntryRow(entry, data) { if (entry.source == Source.MANUAL) editing = entry } }
                     }
                 }

@@ -94,11 +94,7 @@ object TimerAlarm {
     fun schedule(context: Context, timer: ActiveTimer) {
         val am = context.getSystemService(AlarmManager::class.java)
         val at = timer.end.toEpochMilli()
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms()) {
-            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending(context))
-        } else {
-            am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending(context))
-        }
+        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending(context))
     }
 
     fun cancel(context: Context) {

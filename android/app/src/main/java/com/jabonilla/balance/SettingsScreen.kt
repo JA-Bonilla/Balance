@@ -1,5 +1,6 @@
 package com.jabonilla.balance
 
+import androidx.compose.ui.draw.clip
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
@@ -59,7 +60,8 @@ fun SwipeRow(onDelete: () -> Unit, enabled: Boolean = true, content: @Composable
     SwipeToDismissBox(
         state, enableDismissFromStartToEnd = false, enableDismissFromEndToStart = enabled,
         backgroundContent = {
-            Box(Modifier.fillMaxSize().background(Color.Red).padding(end = 16.dp), contentAlignment = Alignment.CenterEnd) {
+            // Only paint while swiping, so the red never peeks out at the row's anti-aliased corners.
+            if (state.dismissDirection == SwipeToDismissBoxValue.EndToStart) Box(Modifier.fillMaxSize().background(Color.Red).padding(end = 16.dp), contentAlignment = Alignment.CenterEnd) {
                 Icon(painterResource(R.drawable.ic_delete), "Delete", tint = Color.White)
             }
         },
@@ -70,7 +72,7 @@ fun SwipeRow(onDelete: () -> Unit, enabled: Boolean = true, content: @Composable
 private fun Section(title: String?, footer: String? = null, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (title != null) Text(title, fontSize = 13.sp, color = muted, modifier = Modifier.padding(horizontal = 4.dp))
-        Column(Modifier.fillMaxWidth().background(Surface, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))) { content() }
+        Column(Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(Surface)) { content() }
         if (footer != null) Text(footer, fontSize = 13.sp, color = muted, modifier = Modifier.padding(horizontal = 4.dp))
     }
 }

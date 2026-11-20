@@ -119,7 +119,9 @@ fun SideSegments(side: Side, onSide: (Side) -> Unit) {
         Side.entries.forEachIndexed { i, s ->
             SegmentedButton(
                 selected = s == side, onClick = { onSide(s) }, shape = SegmentedButtonDefaults.itemShape(i, Side.entries.size),
-                colors = SegmentedButtonDefaults.colors(activeContainerColor = sideColor(s), activeContentColor = Color.Black),
+                colors = SegmentedButtonDefaults.colors(activeContainerColor = sideColor(s), activeContentColor = Color.Black,
+                    inactiveContainerColor = Color.White.copy(alpha = 0.12f), inactiveContentColor = Color.White,
+                    inactiveBorderColor = Color.White.copy(alpha = 0.5f)),
             ) { Text(s.label) }
         }
     }
@@ -225,10 +227,11 @@ fun DateTimeField(label: String, value: Instant, onChange: (Instant) -> Unit, mi
             text = {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     val maxHour = ceiling.atZone(zone).let { if (it.toLocalDate() == local.toLocalDate()) it.hour else 23 }
+                    val maxMinute = { h: Int -> if (h == maxHour && maxHour == ceiling.atZone(zone).hour && local.toLocalDate() == ceiling.atZone(zone).toLocalDate()) ceiling.atZone(zone).minute else 55 }
                     DropdownField("Hour", hour, (0..maxHour).toList(), { h ->
                         if (is24) "%02d".format(h) else LocalTime.of(h, 0).format(DateTimeFormatter.ofPattern("h a"))
-                    }, { hour = it }, Modifier.weight(1f))
-                    DropdownField("Minute", minute, (0..55 step 5).toList(), { "%02d".format(it) }, { minute = it }, Modifier.weight(1f))
+                    }, { hour = it; minute = minOf(minute, maxMinute(it)) }, Modifier.weight(1f))
+                    DropdownField("Minute", minute, (0..maxMinute(hour) step 5).toList(), { "%02d".format(it) }, { minute = it }, Modifier.weight(1f))
                 }
             },
             confirmButton = {
