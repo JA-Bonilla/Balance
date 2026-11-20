@@ -2,6 +2,7 @@
 slug: balance-android-port
 platform: android
 result: PASS
+status: applied
 ---
 ## Verified
 - AC-1: PASS. `./gradlew assembleDebug testDebugUnitTest --rerun-tasks` succeeds (round 3, clean rerun). Dark theme text readable.

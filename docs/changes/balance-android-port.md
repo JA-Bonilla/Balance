@@ -1,6 +1,6 @@
 ---
 slug: balance-android-port
-status: pending
+status: applied
 version_bump: minor
 ---
 ## Planned
