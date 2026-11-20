@@ -1,6 +1,7 @@
 package com.jabonilla.balance
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface as M3Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -19,6 +20,7 @@ fun sideColor(side: Side) = if (side == Side.GROWTH) GrowthColor else FunColor
 fun BalanceTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = darkColorScheme(primary = GrowthColor, background = AppBackground, surface = Surface, onPrimary = Color(0xFF1D1C22)),
-        content = content,
+        // Surface supplies LocalContentColor (default is black) so bare Text is readable on the dark UI.
+        content = { M3Surface(color = AppBackground, content = content) },
     )
 }
