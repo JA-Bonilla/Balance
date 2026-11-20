@@ -217,4 +217,12 @@ class BalanceTest {
         s.setHealthEnabled(false)
         assertFalse(s.data.healthEnabled)
     }
+
+    @Test fun ac22_reimportOfSessionBeforeWindowDoesNotDuplicate() {
+        val a = HealthSync.healthEntry("rec-2", at("2026-10-31T23:50:00Z"), at("2026-11-01T00:20:00Z"), "exercise")
+        val s = Store(file())
+        val w = at("2026-11-01T00:00:00Z") to at("2026-11-30T00:00:00Z")
+        repeat(2) { s.replaceHealthEntries(listOf(a), w.first, w.second) }
+        assertEquals(1, s.data.entries.size)
+    }
 }

@@ -103,8 +103,9 @@ class Store(val file: File) {
 
     /** Replaces Health-sourced entries inside the window with a fresh import, so edits and deletions in Health carry over. */
     fun replaceHealthEntries(entries: List<Entry>, start: Instant, end: Instant) = update {
+        val incomingIDs = entries.map { it.id }.toSet() // sessions straddling the window start come back but date before it
         copy(
-            entries = this.entries.filterNot { it.source == Source.HEALTH && it.date in start..end } +
+            entries = this.entries.filterNot { it.source == Source.HEALTH && (it.date in start..end || incomingIDs.contains(it.id)) } +
                 entries.filter { it.id !in hiddenHealthIDs },
         )
     }

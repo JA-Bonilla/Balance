@@ -224,7 +224,8 @@ fun DateTimeField(label: String, value: Instant, onChange: (Instant) -> Unit, mi
             title = { Text(label) },
             text = {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    DropdownField("Hour", hour, (0..23).toList(), { h ->
+                    val maxHour = ceiling.atZone(zone).let { if (it.toLocalDate() == local.toLocalDate()) it.hour else 23 }
+                    DropdownField("Hour", hour, (0..maxHour).toList(), { h ->
                         if (is24) "%02d".format(h) else LocalTime.of(h, 0).format(DateTimeFormatter.ofPattern("h a"))
                     }, { hour = it }, Modifier.weight(1f))
                     DropdownField("Minute", minute, (0..55 step 5).toList(), { "%02d".format(it) }, { minute = it }, Modifier.weight(1f))
