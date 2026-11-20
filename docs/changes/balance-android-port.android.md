@@ -1,24 +1,28 @@
 ---
 slug: balance-android-port
 platform: android
-result: PASS
+result: FAIL
 ---
 ## Verified
-- AC-1: PASS for build and unit tests (assembleDebug and testDebugUnitTest succeed; 19 tests, 0 failures, rerun in round 1). Manifest sdk values and app id checked in the merged manifest. Portrait and dark theme set by code review only.
-- AC-2: PASS with accepted deviation. No INTERNET, allowBackup false, TimerReceiver not exported, every PendingIntent FLAG_IMMUTABLE (unit tests ac2_*). The merged manifest also exports library components: Health Connect HealthDataSdkService, and ProfileInstallReceiver (guarded by the DUMP permission). Not in the plan's list.
-- AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13 (rounding), AC-16 (store behavior), AC-17, AC-18, AC-19 (params and caption text), AC-22: PASS by unit test, and the Kotlin logic matches the iOS Swift source (balance score, rounding, week interval, legacy goal rule, timer cap, health replace).
-- AC-11, AC-12, AC-14, AC-15, AC-16 (30-char limit and trim), AC-20, AC-21, AC-23, AC-24: NOT VERIFIED. They need a device or emulator (none available). Code reviewed only.
+- AC-1: PASS. assembleDebug and testDebugUnitTest succeed (19 tests, 0 failures, clean rerun in round 2). Dark theme text is now readable on the emulator (Surface fix in a1501c4).
+- AC-2: PASS with accepted deviation. No INTERNET, allowBackup false, TimerReceiver not exported (a shell broadcast to it was refused), every PendingIntent FLAG_IMMUTABLE. Library components exported by Health Connect and ProfileInstall are not in the plan's list.
+- AC-3 to AC-10, AC-13 (rounding), AC-16 (store behavior), AC-17, AC-18, AC-19, AC-22: PASS by unit test.
+- Verified on the emulator (Android 16 AVD, round 2): onboarding to home; log an entry (Growth, 1 hr); Bonsi and sky change after logging (Heat wave scene, Growth 1h, Fun 30m); Save disabled when Custom start equals end (AC-13); Add disabled for an empty name; 30-character name limit; name trimmed on save; add goal; add custom activity (saved as star.fill, balance.json matches the iOS schema); Settings screen; timer start and stop (alarm scheduled, then cancelled on Stop); notification permission prompt at timer start; five timer notification channels created; Health Connect toggle (deny leaves toggle off with an error dialog, allow turns it on); an expired timer in balance.json is logged on app open.
+- AC-11: PARTLY VERIFIED. Permission prompt, channels, alarm schedule and cancel on Stop work. The alarm is inexact (see Bugs). The notification text and sound at timer end was NOT VERIFIED (15 minute minimum timer, receiver is not exported so it cannot be fired by hand).
+- AC-12 (sound preview and next-notification sound), AC-14, AC-15, AC-20, AC-21, AC-23, AC-24: NOT VERIFIED beyond what is listed above. Not exercised on the emulator in this round (no Health Connect data on the device, no preview audio check possible).
 - Lint: not run (not defined).
 
 ## Behavior that differs from the plan
-- Compose BOM 2026.06.01 instead of 2026.11.01 (compileSdk 36 limit). Accepted.
-- Built-in fun list is named Category.fun_ (Kotlin keyword). No effect on the file format. Accepted.
-- Library exported components listed under AC-2.
-- Time dialog hour list is now limited to the current hour when the date is today (fixed in round 1). The minute list still shows all 5-minute marks; a later minute in the current hour is clamped to now.
+- Compose BOM 2026.06.01 instead of 2026.11.01. Accepted.
+- Built-in fun list is named Category.fun_. Accepted.
+- On a fresh install SCHEDULE_EXACT_ALARM is not granted, so the plan's fallback (inexact alarm) is what every user gets.
 
 ## Bugs found, with status
-- Health re-import duplicated an entry that straddles the 28-day window start (duplicate id, double count, possible Home crash): fixed in round 1. Store.replaceHealthEntries now also removes existing Health entries whose id is in the incoming list. New test ac22_reimportOfSessionBeforeWindowDoesNotDuplicate. Hidden IDs and non-Health entries are unchanged.
-- Hour list offered future hours when date is today: fixed in round 1 (hours limited to now; result was already clamped).
-- Open, left for John by decision: findings 2, 3 and 4 from round 0 (see the PR comment on round 0).
-- Open, minor: minute list is not limited in the current hour; picking a later minute silently snaps back to now.
-- Open, minor: a Health session before the window start that is deleted in Health is not removed (not in the incoming list, date outside window).
+- Near-black text on dark background: fixed in round 2 (a1501c4), confirmed on the emulator.
+- Health re-import duplicate and future hours in time dialog: fixed in round 1.
+- Open, should fix: timer-done notification can arrive up to about 22 minutes late (inexact alarm, exact-alarm permission never granted and no way to grant it).
+- Open, minor: red swipe-delete background shows at the rounded corners of the Recent rows on Home even when not swiping.
+- Open, minor: Goals and Custom activities cards on Settings have square top corners (the first row's swipe background is not clipped).
+- Open, minor: unselected Growth/Fun segment is dark on a dark sheet; text is readable but the border is faint.
+- Open, minor: minute list not limited in the current hour; Health session before the window start deleted in Health is not removed.
+- Open, left for John by decision: findings 2, 3 and 4 from round 0.
