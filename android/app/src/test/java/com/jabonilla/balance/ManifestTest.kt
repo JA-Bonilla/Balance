@@ -24,7 +24,7 @@ class ManifestTest {
 
     @Test fun ac2_pendingIntentsAreImmutable() {
         val calls = File("src/main/java").walkTopDown().filter { it.extension == "kt" }.flatMap { f ->
-            // Each call ends at the first line that closes it; check the text up to the next blank line or "fun".
+            // A call may wrap onto the next line, so check that line too.
             Regex("""PendingIntent\.get(Activity|Broadcast|Service)\([^\n]*\n?[^\n]*""").findAll(f.readText()).map { it.value }
         }.toList()
         assertEquals(2, calls.size)
